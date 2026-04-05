@@ -1,0 +1,7 @@
+node_modules/
+dist/
+logs/
+.env
+data/scrape_state.json
+data/enriched_leads.json
+*.log
