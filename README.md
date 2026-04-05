@@ -1,184 +1,270 @@
-# LeadGen Scraper — Production Web Scraping System
+# Lead Scraper — Freight & Business Lead Generation System
 
-High-throughput, cost-efficient scraping engine. No paid APIs required.
-Scales to 10k+ requests/hour with free proxies, unlimited with residential.
+A full-stack lead generation platform that scrapes, scores, and organizes business leads across multiple industries. Built for trucking and freight operations targeting **Alberta and British Columbia, Canada** — with a focus on the **Vancouver ↔ Edmonton** corridor.
 
-## Architecture
+---
+
+## What It Does
+
+This system automatically finds businesses that need freight services by scraping Google Maps and other sources. It filters out junk, scores each lead by industry priority, assigns them to freight lanes, and presents everything in a clean dashboard you can export to CSV.
+
+**No load boards. No paid lead lists. Continuously generates your own pipeline.**
+
+---
+
+## Dashboard Tabs
+
+### 🟢 Leads Tab
+The main general-purpose lead scraper.
+
+- Enter any city and select business categories (plumbers, dentists, restaurants, etc.)
+- Scrapes Google Maps, Google Search, Yelp, and Yellow Pages simultaneously
+- Deduplicates results across all sources automatically
+- Filters by country (🍁 Canada / 🦅 USA), city, business type, or free-text search
+- Toggle **No-Website Only** to find businesses without a web presence (high-value outreach targets)
+- Export results as CSV or TSV
+- Push directly to **HubSpot** or **GoHighLevel** CRM with one click
+
+### 🟡 Reviewers Tab
+Scrapes Google Maps reviewer profiles alongside business listings.
+
+- Captures reviewer name, rating given, review count, Local Guide status, and review text
+- Useful for identifying vocal customers or potential referral sources
+
+### 🟢 Outreach Tab
+Built-in email and SMS campaign builder.
+
+- Choose from pre-built templates: No Website Pitch, Review Building, SEO Outreach
+- Filter targets by: no website, no email, or all leads
+- Find missing emails via Hunter.io, Apollo.io, or Snov.io enrichment APIs
+- Send via Gmail SMTP or SendGrid
+- SMS campaigns via Twilio
+- Tracks campaign history with sent/replied/converted stats
+
+### 🔵 Monitor Tab
+Real-time system health dashboard.
+
+- Live queue stats: waiting, active, completed, failed jobs
+- Success/failure/timeout rates
+- Response time percentiles (p50, p95, p99)
+- Requests per hour throughput
+- Active job list with per-job status
+
+### 🟣 Freight Tab
+The core module for freight lead generation — purpose-built for trucking companies targeting AB and BC shippers.
+
+See full details below.
+
+---
+
+## Freight Tab — Full Feature Guide
+
+### What It Scrapes
+
+The freight tab targets **27 niche query variants** across 11 industry categories:
+
+| Industry | Priority Weight | What It Finds |
+|---|---|---|
+| Oilfield Services | ⭐⭐⭐⭐⭐ 5 | Oilfield contractors, energy services, oil & gas companies |
+| Manufacturers | ⭐⭐⭐⭐ 4 | Factories, fabrication shops, industrial suppliers |
+| Construction | ⭐⭐⭐⭐ 4 | General contractors, civil contractors, heavy equipment |
+| Import / Export | ⭐⭐⭐⭐ 4 | Importers, exporters, customs brokers |
+| Warehouses | ⭐⭐⭐ 3 | Warehouses, storage facilities, logistics centres |
+| Distribution | ⭐⭐⭐ 3 | Distribution centres, wholesale distributors |
+| 3PL / Brokers | ⭐⭐⭐ 3 | Freight brokers, logistics companies, trucking companies |
+| Cold Storage | ⭐⭐⭐ 3 | Cold storage, refrigerated transport |
+| Agriculture | ⭐⭐⭐ 3 | Farms, grain elevators, ag suppliers |
+| Scrap / Recycling | ⭐⭐ 2 | Scrap metal dealers, demolition contractors |
+| E-Commerce | ⭐⭐ 2 | Online retailers, fulfillment centres |
+
+### Lead Scoring Formula
+
+Every lead gets a numeric score to help you prioritize outreach:
 
 ```
-/scraper
-  /core       — Browser pool + scrapeWithBrowser()
-  /stealth    — Anti-detection (UA, viewport, fingerprints, delays)
-  /proxy      — IP rotation, geo-targeting, failure tracking
-  /captcha    — Detection + 2Captcha/Anti-Captcha solver
-  /parser     — Cheerio HTML → structured data (emails, phones, addresses)
-  /queue      — BullMQ + Redis job queue
-  /workers    — Job consumers with concurrency control
-  /api        — Express REST API
-  /utils      — Logger (Winston) + Metrics
+score = (industry_weight × 2) + location_density + (has_contact × 3) + (pain_signal × 2)
 ```
 
-## Quick Start
+| Score | Label | Meaning |
+|---|---|---|
+| 14+ | 🟢 Hot | High-priority industry + major city + contact found |
+| 10–13 | 🟡 Warm | Good industry match, worth contacting |
+| Under 10 | ⚫ Cold | Lower priority or incomplete data |
 
-### 1. Install
+### Lane Assignment
+
+Every lead is automatically assigned to a freight corridor based on city:
+
+| Lane | Cities |
+|---|---|
+| ⭐ **Vancouver ↔ Edmonton** | All Vancouver-area (Surrey, Burnaby, Richmond, Delta, Langley, Abbotsford) + Edmonton-area (Leduc, Nisku, Spruce Grove, St. Albert, Fort McMurray, Grande Prairie) |
+| Calgary ↔ Edmonton | Calgary, Red Deer, Airdrie, Lethbridge, Medicine Hat |
+| Vancouver ↔ Kelowna | Kelowna, Penticton, Vernon, Kamloops |
+| Vancouver ↔ Seattle | Cross-border BC shippers |
+
+**Vancouver ↔ Edmonton is the preferred lane** — those leads are highlighted in gold (⭐) in the table and shown at the top of the lane filter.
+
+### Junk Filter (Blocklist)
+
+The system automatically rejects non-freight businesses that show up in broad searches:
+
+- Self storage, mini storage, U-Haul, moving companies
+- Auto parts stores, tire shops, oil change places, auto body shops
+- Restaurants, cafes, grocery stores, liquor stores
+- Hair salons, spas, medical clinics, dental offices
+- Hotels, real estate offices, schools, banks
+- 60+ keyword patterns total
+
+### City Presets
+
+| Preset | Cities Included |
+|---|---|
+| **Alberta** | Calgary, Edmonton, Red Deer, Lethbridge, Fort McMurray, Grande Prairie, Airdrie, Medicine Hat, Leduc, Nisku, Spruce Grove, St. Albert |
+| **BC** | Vancouver, Surrey, Burnaby, Richmond, Delta, Langley, Abbotsford, Kelowna, Kamloops, Prince George, Chilliwack, Nanaimo |
+| **Both** | All 24 cities above |
+
+### Export Options
+
+- **Export CSV** — exports all visible (filtered) leads
+- **Top 50 by Score** — exports the 50 highest-scoring leads across your entire freight pipeline
+
+---
+
+## Setup
+
+### 1. Install Dependencies
 
 ```bash
+cd scraper
 npm install
-npm run install:browser     # download Chromium (~130MB, one-time)
+npm run install:browser     # Downloads Chromium (~130MB, one-time only)
 cp .env.example .env
 ```
 
 ### 2. Start Redis
 
+Redis is required for the job queue.
+
 ```bash
 # Docker (easiest):
 docker run -d -p 6379:6379 redis:alpine
 
-# Or install locally:
-brew install redis && redis-server
+# Windows (if installed locally):
+redis-server
 ```
 
-### 3. Run
+### 3. Run the System
 
-Open two terminals:
+Open **three terminals** in the scraper folder:
 
 ```bash
-# Terminal 1 — API server
+# Terminal 1 — API server (port 3000)
 npm run start:api
 
-# Terminal 2 — Worker (job processor)
+# Terminal 2 — Worker (processes scraping jobs)
 npm run start:worker
+
+# Terminal 3 — Frontend (port 5173)
+npm run dev
 ```
 
-### 4. Test
+Then open **http://localhost:5173** in your browser.
+
+---
+
+## Settings (⚙ Gear Button)
+
+| Setting | What It Does |
+|---|---|
+| **Scrapingdog / SerpAPI keys** | Paid API fallbacks for faster scraping |
+| **CAPTCHA solver chain** | Free (FlareSolverr, audio bypass, NopeCHA) → paid (2Captcha, CapSolver) |
+| **Proxy list** | Paste proxies in `host:port:user:pass` format, one per line |
+| **Worker concurrency** | How many parallel browser tabs to run (default 20) |
+| **Request delay** | Milliseconds between requests (higher = safer, slower) |
+| **HubSpot token** | Push leads directly to HubSpot CRM |
+| **GoHighLevel API key** | Push leads to GoHighLevel agency CRM |
+
+---
+
+## Architecture
+
+```
+/api          — Express REST API (port 3000)
+/core         — Playwright browser pool + scrapeWithBrowser()
+/scrapers     — Google Maps, Google Search, Yelp, Yellow Pages scrapers
+/stealth      — Anti-detection (user agents, viewports, delays, fingerprints)
+/proxy        — IP rotation, geo-targeting, health tracking
+/captcha      — CAPTCHA detection + solver chain (free → paid)
+/queue        — BullMQ + Redis job queue
+/workers      — Job consumers with concurrency control
+/enrichment   — Email discovery (Hunter, Apollo, Snov) + lead scoring
+/integrations — HubSpot and GoHighLevel CRM connectors
+/outreach     — Email/SMS campaign builder and sender
+/parser       — Cheerio HTML parser
+/utils        — Winston logger + request metrics
+/src          — React frontend (Vite)
+scraper_dashboard.jsx — Main UI (all 5 tabs)
+```
+
+---
+
+## API Endpoints
 
 ```bash
-# Single search (synchronous)
-curl "http://localhost:3000/search?q=plumbers+in+Austin+TX"
+# Health check
+GET /health
 
-# Async — returns job ID immediately
-curl "http://localhost:3000/search?q=dentists+in+Miami&async=true"
-# → { "jobId": "123", "status": "queued" }
+# Scrape (synchronous)
+POST /leads
+Body: { "location": "Calgary", "category": "warehouse", "source": "google_maps", "maxResults": 60 }
 
-# Poll for result
-curl "http://localhost:3000/jobs/123"
+# Scrape (async — returns jobId immediately)
+POST /leads?async=true
 
-# Batch (POST)
-curl -X POST http://localhost:3000/jobs \
-  -H "Content-Type: application/json" \
-  -d '{"jobs":[{"query":"plumbers in Austin"},{"query":"dentists in Miami"}]}'
+# Check job status / get results
+GET /jobs/:jobId
 
-# Metrics
-curl http://localhost:3000/metrics
+# Live metrics
+GET /metrics
 
-# Queue stats
-curl http://localhost:3000/queue/stats
+# Queue depth
+GET /queue/stats
+
+# Proxy status
+GET /proxies
 ```
 
-## Response Format
+---
 
-```json
-{
-  "query": "plumbers in Austin TX",
-  "url": "https://www.google.com/maps/...",
-  "results": [{
-    "title": "Joe's Plumbing",
-    "description": "...",
-    "emails": ["joe@joesplumbing.com"],
-    "phones": ["(512) 555-0123"],
-    "address": "123 Main St, Austin, TX 78701",
-    "hours": "Mon-Fri 8am-6pm",
-    "socialLinks": { "facebook": "...", "instagram": "..." },
-    "rating": "4.8",
-    "reviewCount": 312,
-    "links": [...]
-  }],
-  "source": "browser",
-  "success": true,
-  "attempts": 1,
-  "elapsed": 3420,
-  "timestamp": "2025-04-02T12:00:00Z"
-}
-```
+## Scaling
 
-## Scaling to 10k+ req/hour
+| Target | Setup |
+|---|---|
+| 500–1k leads/hr | Single machine, no proxies, concurrency 20 |
+| 1k–5k leads/hr | Add free proxies, concurrency 50 |
+| 5k–20k leads/hr | Residential proxies (Webshare, Smartproxy) |
+| 20k+ leads/hr | Multiple machines sharing one Redis instance |
 
-### Single machine
-```bash
-# Increase worker concurrency in .env:
-WORKER_CONCURRENCY=50
+Workers are stateless — add more machines and point them at the same Redis URL.
 
-# Run multiple worker processes:
-npm run start:worker &
-npm run start:worker &
-npm run start:worker &
-```
-
-3 workers × 50 concurrency = 150 parallel jobs.
-At ~3s/request = ~180k requests/hour theoretical.
-Real-world with Google Maps: ~5–15k/hour per machine.
-
-### Multiple machines
-Each machine runs:
-- 1+ worker processes
-- Shared Redis (one instance or cluster)
-- API server (optionally load-balanced)
-
-Workers are stateless — just point them at the same Redis.
-
-### Proxy requirements
-| Scale target    | Proxy type              | Provider              |
-|-----------------|-------------------------|-----------------------|
-| < 1k req/hr     | Free proxies or none    | free-proxy-list.net   |
-| 1k–10k req/hr   | Datacenter proxies      | Webshare, ProxyEmpire |
-| 10k–100k req/hr | Residential proxies     | Smartproxy, BrightData |
-| 100k+ req/hr    | Residential + rotating  | BrightData, Oxylabs   |
-
-### Add proxies
-```env
-# .env
-PROXIES=http://user:pass@proxy1.com:8000,http://user:pass@proxy2.com:8000
-
-# Or with regions:
-PROXIES=proxy1.com:8000:user:pass:us-east,proxy2.com:8000:user:pass:us-west
-```
-
-Then in your API calls:
-```bash
-curl "http://localhost:3000/search?q=dentists+in+NYC&region=us-east"
-```
-
-## CAPTCHA Handling
-
-Without a solver (free): CAPTCHAs cause proxy rotation + retry.
-With 2Captcha ($3/1000 solves): CAPTCHAs are auto-solved.
-
-```env
-CAPTCHA_API_KEY=your_2captcha_key
-CAPTCHA_SERVICE=2captcha
-```
+---
 
 ## Cost Comparison
 
-| Method               | Cost per 10k leads  | Speed          |
-|----------------------|---------------------|----------------|
-| This system (free)   | $0 (server costs)   | 1k–5k/hr       |
-| + Residential proxies| ~$5–20 (bandwidth)  | 10k–50k/hr     |
-| SerpAPI              | ~$90                | 10k+/hr        |
-| Scrapingdog          | ~$3.30              | 10k+/hr        |
-| Google Places API    | ~$200               | Limited        |
+| Method | Cost per 10k leads | Speed |
+|---|---|---|
+| This system (no proxies) | $0 | 500–2k/hr |
+| + Residential proxies | ~$5–20 | 5k–20k/hr |
+| SerpAPI | ~$90 | Fast |
+| Google Places API | ~$200 | Limited |
 
-## Monitoring
+---
 
-```bash
-# Live metrics
-watch -n 5 "curl -s http://localhost:3000/metrics | python3 -m json.tool"
+## Tech Stack
 
-# Queue depth
-curl http://localhost:3000/queue/stats
-```
-
-Key metrics to watch:
-- `successRate` — below 80% means you need more/better proxies
-- `requests.captcha` — high count = need CAPTCHA solver
-- `latency.p95` — above 15s = increase timeout or add workers
+- **Frontend:** React 19, Vite
+- **Backend:** Node.js, Express
+- **Scraping:** Playwright (Chromium), Cheerio
+- **Queue:** BullMQ + Redis
+- **Anti-detection:** Custom stealth layer, proxy rotation, CAPTCHA chain
+- **Logging:** Winston
